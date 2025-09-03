@@ -21,7 +21,6 @@ class News extends Model implements HasMedia
         'description',
         'status',
         'publish_date',
-        'sort',
     ];
 
     protected $translatable = [
@@ -55,9 +54,6 @@ class News extends Model implements HasMedia
         static::creating(function ($news) {
             if (empty($news->slug)) {
                 $news->slug = static::generateUniqueSlug($news->getTranslation('title', 'en') ?? '');
-            }
-            if (is_null($news->sort)) {
-                $news->sort = static::max('sort') + 1;
             }
         });
 

@@ -25,7 +25,6 @@ class NewsSeeder extends Seeder
                 ],
                 'status' => true,
                 'publish_date' => now()->subDays(2),
-                'sort' => 1,
             ],
             [
                 'title' => [
@@ -38,7 +37,6 @@ class NewsSeeder extends Seeder
                 ],
                 'status' => true,
                 'publish_date' => now()->subDay(),
-                'sort' => 2,
             ],
             [
                 'title' => [
@@ -51,7 +49,6 @@ class NewsSeeder extends Seeder
                 ],
                 'status' => true,
                 'publish_date' => now(),
-                'sort' => 3,
             ],
             [
                 'title' => [
@@ -64,7 +61,6 @@ class NewsSeeder extends Seeder
                 ],
                 'status' => false,
                 'publish_date' => now()->addWeek(),
-                'sort' => 4,
             ],
         ];
 

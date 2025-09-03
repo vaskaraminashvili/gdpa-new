@@ -12,8 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Table;
-use IbrahimBougaoua\FilamentSortOrder\Actions\DownStepAction;
-use IbrahimBougaoua\FilamentSortOrder\Actions\UpStepAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -37,6 +35,18 @@ class NewsResource extends Resource
             ->schema([
                 Forms\Components\Section::make('News Information')
                     ->schema([
+                        Forms\Components\Toggle::make('status')
+                            ->label('Active')
+                            ->default(true)
+                            ->columnSpanFull()
+                            ->required(),
+
+                        Forms\Components\DateTimePicker::make('publish_date')
+                            ->label('Publish Date')
+                            ->default(now())
+                            ->required()
+                            ->columnSpanFull(),
+
                         SpatieMediaLibraryFileUpload::make('images')
                             ->label('News Images')
                             ->collection('images')
@@ -51,27 +61,20 @@ class NewsResource extends Resource
                             ->reorderable()
                             ->columnSpanFull(),
 
-                        Forms\Components\Toggle::make('status')
-                            ->label('Active')
-                            ->default(true)
-                            ->required(),
 
-                        Forms\Components\DateTimePicker::make('publish_date')
-                            ->label('Publish Date')
-                            ->default(now())
-                            ->required(),
-
-                        Forms\Components\TextInput::make('sort')
-                            ->label('Sort Order')
-                            ->numeric()
-                            ->default(fn() => News::max('sort') + 1)
-                            ->required()
-                            ->minValue(0),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('English Content')
+                Forms\Components\Section::make()
                     ->schema([
+                        Forms\Components\TextInput::make('slug')
+                            ->label('Slug')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(News::class, 'slug', ignoreRecord: true)
+                            ->rules(['alpha_dash'])
+                            ->columnSpanFull()
+                            ->disabled(),
                         Forms\Components\TextInput::make('title.en')
                             ->label('Title (English)')
                             ->required()
@@ -83,12 +86,7 @@ class NewsResource extends Resource
                                 }
                             }),
 
-                        Forms\Components\TextInput::make('slug')
-                            ->label('Slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(News::class, 'slug', ignoreRecord: true)
-                            ->rules(['alpha_dash']),
+
 
                         Forms\Components\TextInput::make('title.ka')
                             ->label('Title (Georgian)')
@@ -105,8 +103,7 @@ class NewsResource extends Resource
                                 'link',
                                 'undo',
                                 'redo',
-                            ])
-                            ->columnSpanFull(),
+                            ]),
 
                         Forms\Components\RichEditor::make('description.ka')
                             ->label('Description (Georgian)')
@@ -119,8 +116,7 @@ class NewsResource extends Resource
                                 'link',
                                 'undo',
                                 'redo',
-                            ])
-                            ->columnSpanFull(),
+                            ]),
                     ])
                     ->columns(2),
             ]);
@@ -130,12 +126,6 @@ class NewsResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('sort')
-                    ->label('#')
-                    ->sortable()
-                    ->alignCenter()
-                    ->size('sm'),
-
                 SpatieMediaLibraryImageColumn::make('images')
                     ->label('Images')
                     ->collection('images')
@@ -186,33 +176,28 @@ class NewsResource extends Resource
                     ->native(false),
 
                 Tables\Filters\Filter::make('published')
-                    ->query(fn (Builder $query): Builder => $query->published())
+                    ->query(fn(Builder $query): Builder => $query->published())
                     ->label('Published Only'),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),
-                    DownStepAction::make(),
-                    UpStepAction::make(),
                 ])
-                ->icon('heroicon-m-ellipsis-vertical')
-                ->size('sm')
-                ->color('gray')
-                ->button(),
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->size('sm')
+                    ->color('gray')
+                    ->button(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->reorderable('sort')
-            ->defaultSort('sort')
             ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->label('New Article')
-                    ->icon('heroicon-o-plus'),
+                // Tables\Actions\CreateAction::make()
+                //     ->label('New Article')
+                //     ->icon('heroicon-o-plus'),
             ]);
     }
 
@@ -232,4 +217,4 @@ class NewsResource extends Resource
             'edit' => Pages\EditNews::route('/{record}/edit'),
         ];
     }
-} 
+}

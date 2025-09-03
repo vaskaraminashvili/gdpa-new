@@ -9,17 +9,17 @@ class NewsRepository
 {
     public function all(): Collection
     {
-        return News::orderBy('sort')->get();
+        return News::orderBy('created_at', 'desc')->get();
     }
 
     public function published(): Collection
     {
-        return News::published()->orderBy('sort')->get();
+        return News::published()->orderBy('publish_date', 'desc')->get();
     }
 
     public function active(): Collection
     {
-        return News::active()->orderBy('sort')->get();
+        return News::active()->orderBy('publish_date', 'desc')->get();
     }
 
     public function find(int $id): ?News
@@ -45,12 +45,5 @@ class NewsRepository
     public function delete(News $news): bool
     {
         return $news->delete();
-    }
-
-    public function updateSort(array $sortData): void
-    {
-        foreach ($sortData as $item) {
-            News::where('id', $item['id'])->update(['sort' => $item['sort']]);
-        }
     }
 } 

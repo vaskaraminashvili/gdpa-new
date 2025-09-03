@@ -51,9 +51,4 @@ class NewsService
     {
         return $this->newsRepository->delete($news);
     }
-
-    public function updateSortOrder(array $sortData): void
-    {
-        $this->newsRepository->updateSort($sortData);
-    }
 } 
