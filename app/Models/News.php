@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 class News extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia, HasTranslations;
+    use SoftDeletes, InteractsWithMedia, HasTranslations;
 
     protected $fillable = [
         'title',
@@ -31,6 +31,8 @@ class News extends Model implements HasMedia
     protected $casts = [
         'status' => 'boolean',
         'publish_date' => 'datetime',
+        'title' => 'array',
+        'description' => 'array',
     ];
 
     public function registerMediaCollections(): void

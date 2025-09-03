@@ -198,7 +198,8 @@ class NewsResource extends Resource
                 // Tables\Actions\CreateAction::make()
                 //     ->label('New Article')
                 //     ->icon('heroicon-o-plus'),
-            ]);
+            ])
+            ->defaultSort('publish_date', 'desc');
     }
 
     public static function getRelations(): array

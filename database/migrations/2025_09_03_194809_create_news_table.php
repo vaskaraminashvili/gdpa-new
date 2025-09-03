@@ -18,12 +18,10 @@ return new class extends Migration
             $table->json('description')->nullable();
             $table->boolean('status')->default(true);
             $table->datetime('publish_date')->nullable();
-            $table->integer('sort')->default(0);
             $table->timestamps();
             $table->softDeletes();
 
             $table->index(['status', 'publish_date']);
-            $table->index('sort');
             $table->index('slug');
         });
     }

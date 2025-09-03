@@ -65,7 +65,7 @@ class SlideResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('English Content')
+                Forms\Components\Section::make()
                     ->schema([
                         Forms\Components\TextInput::make('title.en')
                             ->label('Title (English)')
@@ -75,7 +75,7 @@ class SlideResource extends Resource
                             ->label('Title (Georgian)')
                             ->maxLength(255),
 
-                        Forms\Components\RichEditor::make('description_en')
+                        Forms\Components\RichEditor::make('description.en')
                             ->label('Description (English)')
                             ->toolbarButtons([
                                 'bold',
@@ -89,7 +89,7 @@ class SlideResource extends Resource
                             ]),
 
 
-                        Forms\Components\RichEditor::make('description_ka')
+                        Forms\Components\RichEditor::make('description.ka')
                             ->label('Description (Georgian)')
                             ->toolbarButtons([
                                 'bold',

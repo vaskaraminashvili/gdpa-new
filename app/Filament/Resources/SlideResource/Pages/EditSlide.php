@@ -19,30 +19,14 @@ class EditSlide extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        // Load translations into separate fields for editing
-        $data['title_en'] = $data['title']['en'] ?? '';
-        $data['title_ka'] = $data['title']['ka'] ?? '';
-        $data['description_en'] = $data['description']['en'] ?? '';
-        $data['description_ka'] = $data['description']['ka'] ?? '';
-        
+        // The form uses dot notation, so data is already in correct format
         return $data;
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Combine separate fields back into translatable format
-        $data['title'] = [
-            'en' => $data['title_en'] ?? '',
-            'ka' => $data['title_ka'] ?? '',
-        ];
-        $data['description'] = [
-            'en' => $data['description_en'] ?? '',
-            'ka' => $data['description_ka'] ?? '',
-        ];
-        
-        // Remove the separate fields
-        unset($data['title_en'], $data['title_ka'], $data['description_en'], $data['description_ka']);
-        
+        // The form uses dot notation, so data is already in correct format
         return $data;
     }
+
 }
