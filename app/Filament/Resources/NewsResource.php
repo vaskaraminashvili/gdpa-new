@@ -178,6 +178,7 @@ class NewsResource extends Resource
                 Tables\Filters\Filter::make('published')
                     ->query(fn(Builder $query): Builder => $query->published())
                     ->label('Published Only'),
+                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
