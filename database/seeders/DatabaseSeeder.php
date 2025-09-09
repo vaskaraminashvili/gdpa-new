@@ -15,6 +15,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(AdminUserSeeder::class);
         $this->call(SlideSeeder::class);
+        $this->call(NewsSeeder::class);
+        $this->call(GallerySeeder::class);
         
         // User::factory(10)->create();
 

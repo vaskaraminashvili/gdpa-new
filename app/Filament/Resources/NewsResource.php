@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\SlideResource\Pages;
-use App\Filament\Resources\SlideResource\RelationManagers;
-use App\Models\Slide;
+use App\Filament\Resources\NewsResource\Pages;
+use App\Filament\Resources\NewsResource\RelationManagers;
+use App\Models\News;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
@@ -12,33 +12,44 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Table;
-use IbrahimBougaoua\FilamentSortOrder\Actions\DownStepAction;
-use IbrahimBougaoua\FilamentSortOrder\Actions\UpStepAction;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class SlideResource extends Resource
+class NewsResource extends Resource
 {
-    protected static ?string $model = Slide::class;
+    protected static ?string $model = News::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-photo';
+    protected static ?string $navigationIcon = 'heroicon-o-newspaper';
 
-    protected static ?string $navigationLabel = 'Slides';
+    protected static ?string $navigationLabel = 'News';
 
-    protected static ?string $modelLabel = 'Slide';
+    protected static ?string $modelLabel = 'News Article';
 
-    protected static ?string $pluralModelLabel = 'Slides';
+    protected static ?string $pluralModelLabel = 'News';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Slide Information')
+                Forms\Components\Section::make('News Information')
                     ->schema([
-                        SpatieMediaLibraryFileUpload::make('slides')
-                            ->label('Slide Images')
-                            ->collection('slides')
+                        Forms\Components\Toggle::make('status')
+                            ->label('Active')
+                            ->default(true)
+                            ->columnSpanFull()
+                            ->required(),
+
+                        Forms\Components\DateTimePicker::make('publish_date')
+                            ->label('Publish Date')
+                            ->default(now())
+                            ->required()
+                            ->columnSpanFull(),
+
+                        SpatieMediaLibraryFileUpload::make('images')
+                            ->label('News Images')
+                            ->collection('images')
                             ->image()
                             ->imageEditor()
                             ->imageEditorAspectRatios([
@@ -50,26 +61,33 @@ class SlideResource extends Resource
                             ->reorderable()
                             ->columnSpanFull(),
 
-                        Forms\Components\Toggle::make('status')
-                            ->label('Active')
-                            ->default(true)
-                            ->required(),
 
-                        Forms\Components\TextInput::make('sort')
-                            ->label('Sort Order')
-                            ->numeric()
-                            ->default(fn() => Slide::max('sort') + 1)
-                            ->required()
-                            ->minValue(0),
                     ])
                     ->columns(2),
 
                 Forms\Components\Section::make()
                     ->schema([
+                        Forms\Components\TextInput::make('slug')
+                            ->label('Slug')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(News::class, 'slug', ignoreRecord: true)
+                            ->rules(['alpha_dash'])
+                            ->columnSpanFull()
+                            ->disabled(),
                         Forms\Components\TextInput::make('title.en')
                             ->label('Title (English)')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
+                                if (filled($state)) {
+                                    $set('slug', \Illuminate\Support\Str::slug($state));
+                                }
+                            }),
+
+
+
                         Forms\Components\TextInput::make('title.ka')
                             ->label('Title (Georgian)')
                             ->maxLength(255),
@@ -86,7 +104,6 @@ class SlideResource extends Resource
                                 'undo',
                                 'redo',
                             ]),
-
 
                         Forms\Components\RichEditor::make('description.ka')
                             ->label('Description (Georgian)')
@@ -109,15 +126,9 @@ class SlideResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('sort')
-                    ->label('#')
-                    ->sortable()
-                    ->alignCenter()
-                    ->size('sm'),
-
-                SpatieMediaLibraryImageColumn::make('slides')
+                SpatieMediaLibraryImageColumn::make('images')
                     ->label('Images')
-                    ->collection('slides')
+                    ->collection('images')
                     ->conversion('thumb')
                     ->size(60)
                     ->limit(3),
@@ -125,7 +136,7 @@ class SlideResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->label('Title')
                     ->getStateUsing(
-                        fn(Slide $record): string =>
+                        fn(News $record): string =>
                         $record->getTranslation('title', app()->getLocale()) ??
                             $record->getTranslation('title', 'en') ??
                             'No title'
@@ -133,12 +144,22 @@ class SlideResource extends Resource
                     ->searchable()
                     ->wrap(),
 
+                Tables\Columns\TextColumn::make('slug')
+                    ->label('Slug')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\ToggleColumn::make('status')
                     ->label('Status')
                     ->onIcon('heroicon-o-check-circle')
                     ->offIcon('heroicon-o-x-circle')
                     ->onColor('success')
                     ->offColor('danger'),
+
+                Tables\Columns\TextColumn::make('publish_date')
+                    ->label('Publish Date')
+                    ->dateTime()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created')
@@ -153,14 +174,16 @@ class SlideResource extends Resource
                     ->trueLabel('Active')
                     ->falseLabel('Inactive')
                     ->native(false),
+
+                Tables\Filters\Filter::make('published')
+                    ->query(fn(Builder $query): Builder => $query->published())
+                    ->label('Published Only'),
+                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),
-                    DownStepAction::make(),
-                    UpStepAction::make(),
                 ])
                     ->icon('heroicon-m-ellipsis-vertical')
                     ->size('sm')
@@ -172,13 +195,12 @@ class SlideResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->reorderable('sort')
-            ->defaultSort('sort')
             ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->label('New Slide')
-                    ->icon('heroicon-o-plus'),
-            ]);
+                // Tables\Actions\CreateAction::make()
+                //     ->label('New Article')
+                //     ->icon('heroicon-o-plus'),
+            ])
+            ->defaultSort('publish_date', 'desc');
     }
 
     public static function getRelations(): array
@@ -191,9 +213,10 @@ class SlideResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSlides::route('/'),
-            'create' => Pages\CreateSlide::route('/create'),
-            'edit' => Pages\EditSlide::route('/{record}/edit'),
+            'index' => Pages\ListNews::route('/'),
+            'create' => Pages\CreateNews::route('/create'),
+            'view' => Pages\ViewNews::route('/{record}'),
+            'edit' => Pages\EditNews::route('/{record}/edit'),
         ];
     }
 }

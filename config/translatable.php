@@ -10,8 +10,8 @@ return [
     |
     */
     'locales' => [
-        'en',
         'ka',
+        'en',
     ],
 
     /*

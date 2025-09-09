@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\SlideResource\Pages;
+namespace App\Filament\Resources\NewsResource\Pages;
 
-use App\Filament\Resources\SlideResource;
+use App\Filament\Resources\NewsResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditSlide extends EditRecord
+class EditNews extends EditRecord
 {
-    protected static string $resource = SlideResource::class;
+    protected static string $resource = NewsResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -28,5 +28,4 @@ class EditSlide extends EditRecord
         // The form uses dot notation, so data is already in correct format
         return $data;
     }
-
-}
+} 

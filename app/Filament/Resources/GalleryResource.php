@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\SlideResource\Pages;
-use App\Filament\Resources\SlideResource\RelationManagers;
-use App\Models\Slide;
+use App\Filament\Resources\GalleryResource\Pages;
+use App\Filament\Resources\GalleryResource\RelationManagers;
+use App\Models\Gallery;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
@@ -15,30 +15,53 @@ use Filament\Tables\Table;
 use IbrahimBougaoua\FilamentSortOrder\Actions\DownStepAction;
 use IbrahimBougaoua\FilamentSortOrder\Actions\UpStepAction;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class SlideResource extends Resource
+class GalleryResource extends Resource
 {
-    protected static ?string $model = Slide::class;
+    protected static ?string $model = Gallery::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
-    protected static ?string $navigationLabel = 'Slides';
+    protected static ?string $navigationLabel = 'Galleries';
 
-    protected static ?string $modelLabel = 'Slide';
+    protected static ?string $modelLabel = 'Gallery';
 
-    protected static ?string $pluralModelLabel = 'Slides';
+    protected static ?string $pluralModelLabel = 'Galleries';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Slide Information')
+            Forms\Components\Section::make('Gallery Title')
+                ->schema([
+                    Forms\Components\TextInput::make('title.en')
+                        ->label('Title (English)')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('title.ka')
+                        ->label('Title (Georgian)')
+                        ->maxLength(255),
+                ])
+                ->columns(2),
+                Forms\Components\Section::make('Gallery Information')
                     ->schema([
-                        SpatieMediaLibraryFileUpload::make('slides')
-                            ->label('Slide Images')
-                            ->collection('slides')
+                        Forms\Components\Toggle::make('status')
+                            ->label('Active')
+                            ->default(true)
+                            ->required(),
+
+                        Forms\Components\TextInput::make('sort')
+                            ->label('Sort Order')
+                            ->numeric()
+                            ->default(fn() => Gallery::max('sort') + 1)
+                            ->required()
+                            ->minValue(0),
+                        SpatieMediaLibraryFileUpload::make('images')
+                            ->label('Gallery Images')
+                            ->collection('images')
                             ->image()
                             ->imageEditor()
                             ->imageEditorAspectRatios([
@@ -48,60 +71,12 @@ class SlideResource extends Resource
                             ])
                             ->multiple()
                             ->reorderable()
+                            ->maxFiles(20)
                             ->columnSpanFull(),
-
-                        Forms\Components\Toggle::make('status')
-                            ->label('Active')
-                            ->default(true)
-                            ->required(),
-
-                        Forms\Components\TextInput::make('sort')
-                            ->label('Sort Order')
-                            ->numeric()
-                            ->default(fn() => Slide::max('sort') + 1)
-                            ->required()
-                            ->minValue(0),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make()
-                    ->schema([
-                        Forms\Components\TextInput::make('title.en')
-                            ->label('Title (English)')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('title.ka')
-                            ->label('Title (Georgian)')
-                            ->maxLength(255),
 
-                        Forms\Components\RichEditor::make('description.en')
-                            ->label('Description (English)')
-                            ->toolbarButtons([
-                                'bold',
-                                'italic',
-                                'underline',
-                                'bulletList',
-                                'orderedList',
-                                'link',
-                                'undo',
-                                'redo',
-                            ]),
-
-
-                        Forms\Components\RichEditor::make('description.ka')
-                            ->label('Description (Georgian)')
-                            ->toolbarButtons([
-                                'bold',
-                                'italic',
-                                'underline',
-                                'bulletList',
-                                'orderedList',
-                                'link',
-                                'undo',
-                                'redo',
-                            ]),
-                    ])
-                    ->columns(2),
             ]);
     }
 
@@ -115,23 +90,31 @@ class SlideResource extends Resource
                     ->alignCenter()
                     ->size('sm'),
 
-                SpatieMediaLibraryImageColumn::make('slides')
+                SpatieMediaLibraryImageColumn::make('images')
                     ->label('Images')
-                    ->collection('slides')
+                    ->collection('images')
                     ->conversion('thumb')
                     ->size(60)
-                    ->limit(3),
+                    ->limit(5)
+                    ->stacked(),
 
                 Tables\Columns\TextColumn::make('title')
                     ->label('Title')
                     ->getStateUsing(
-                        fn(Slide $record): string =>
+                        fn(Gallery $record): string =>
                         $record->getTranslation('title', app()->getLocale()) ??
                             $record->getTranslation('title', 'en') ??
                             'No title'
                     )
                     ->searchable()
                     ->wrap(),
+
+                Tables\Columns\TextColumn::make('images_count')
+                    ->label('Images')
+                    ->getStateUsing(fn(Gallery $record): int => $record->getMedia('images')->count())
+                    ->alignCenter()
+                    ->badge()
+                    ->color('info'),
 
                 Tables\Columns\ToggleColumn::make('status')
                     ->label('Status')
@@ -153,7 +136,8 @@ class SlideResource extends Resource
                     ->trueLabel('Active')
                     ->falseLabel('Inactive')
                     ->native(false),
-            ])
+            Tables\Filters\TrashedFilter::make(),
+        ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
@@ -170,13 +154,15 @@ class SlideResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->reorderable('sort')
             ->defaultSort('sort')
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('New Slide')
+                    ->label('New Gallery')
                     ->icon('heroicon-o-plus'),
             ]);
     }
@@ -191,9 +177,10 @@ class SlideResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSlides::route('/'),
-            'create' => Pages\CreateSlide::route('/create'),
-            'edit' => Pages\EditSlide::route('/{record}/edit'),
+            'index' => Pages\ListGalleries::route('/'),
+            'create' => Pages\CreateGallery::route('/create'),
+            'view' => Pages\ViewGallery::route('/{record}'),
+            'edit' => Pages\EditGallery::route('/{record}/edit'),
         ];
     }
 }

@@ -3,7 +3,8 @@
 namespace App\Providers;
 
 use App\Repositories\SlideRepository;
-use App\Services\SlideService;
+use App\Repositories\NewsRepository;
+use App\Repositories\GalleryRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -14,7 +15,8 @@ class RepositoryServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(SlideRepository::class, SlideRepository::class);
-        $this->app->bind(SlideService::class, SlideService::class);
+        $this->app->bind(NewsRepository::class, NewsRepository::class);
+        $this->app->bind(GalleryRepository::class, GalleryRepository::class);
     }
 
     /**
