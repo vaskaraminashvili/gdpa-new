@@ -4,6 +4,8 @@ namespace App\Repositories;
 
 use App\Models\News;
 use Illuminate\Database\Eloquent\Collection;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Support\Facades\DB;
 
 class NewsRepository
 {
@@ -45,5 +47,23 @@ class NewsRepository
     public function delete(News $news): bool
     {
         return $news->delete();
+    }
+    public function importOldData(): void
+    {
+        $old_data = DB::table('news_copy1')
+            ->orderBy('id', 'asc')->get();
+        foreach ($old_data as $item) {
+            $media = DB::table('media_copy1')->where('model_id', $item->id)->where('model_type', 'App\Models\News')->first();
+            $news = News::create([
+                'title' => $item->title,
+                'description' => $item->description,
+                'status' => $item->status,
+                'publish_date' => $item->date,
+            ]);
+            DB::table('media_copy1_copy1')->where('model_id', $item->id)->update([
+                'model_id' => $news->id,
+                'model_type' => 'App\Models\News',
+            ]);
+        }
     }
 } 

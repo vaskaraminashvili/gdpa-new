@@ -10,18 +10,30 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Translatable\HasTranslations;
 use Illuminate\Support\Str;
+use Cviebrock\EloquentSluggable\Sluggable;
 
 class News extends Model implements HasMedia
 {
-    use SoftDeletes, InteractsWithMedia, HasTranslations;
+    use SoftDeletes, InteractsWithMedia, HasTranslations, Sluggable;
 
     protected $fillable = [
         'title',
-        'slug',
         'description',
         'status',
         'publish_date',
     ];
+
+    public function sluggable(): array
+    {
+        return [
+            'slug' => [
+                'source' => ['description', 'title'],
+                'maxLength' => 50,
+                'separator' => '-',
+                'unique' => true,
+            ],
+        ];
+    }
 
     protected $translatable = [
         'title',
@@ -37,57 +49,27 @@ class News extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('images')
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+        $this
+            ->addMediaCollection('news')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+            ->singleFile();
     }
 
     public function registerMediaConversions(Media $media = null): void
     {
-        $this->addMediaConversion('thumb')
+        $this->addMediaConversion('big-thumb')
+            ->width(1680)
+            ->height(815);
+
+        $this->addMediaConversion('card-thumb')
+            ->width(633)
+            ->height(470);
+
+        $this->addMediaConversion('small-thumb')
             ->width(300)
-            ->height(200)
-            ->sharpen(10);
+            ->height(100);
     }
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($news) {
-            if (empty($news->slug)) {
-                $news->slug = static::generateUniqueSlug($news->getTranslation('title', 'en') ?? '');
-            }
-        });
-
-        static::updating(function ($news) {
-            if ($news->isDirty('title')) {
-                $news->slug = static::generateUniqueSlug($news->getTranslation('title', 'en') ?? '', $news->id);
-            }
-        });
-    }
-
-    public static function generateUniqueSlug(string $title, ?int $excludeId = null): string
-    {
-        $slug = Str::slug($title);
-        $originalSlug = $slug;
-        $counter = 1;
-
-        $query = static::where('slug', $slug);
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-
-        while ($query->exists()) {
-            $slug = $originalSlug . '-' . $counter;
-            $query = static::where('slug', $slug);
-            if ($excludeId) {
-                $query->where('id', '!=', $excludeId);
-            }
-            $counter++;
-        }
-
-        return $slug;
-    }
 
     public function scopePublished($query)
     {

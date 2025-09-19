@@ -18,6 +18,8 @@ return new class extends Migration
             $table->json('description')->nullable();
             $table->boolean('status')->default(true);
             $table->datetime('publish_date')->nullable();
+            $table->datetime('publish_dat222e')->nullable();
+            $table->foreignId('gallery_id')->nullable()->constrained('galleries');
             $table->timestamps();
             $table->softDeletes();
 
