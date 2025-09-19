@@ -41,7 +41,7 @@ class NewsResource extends Resource
                             ->columnSpanFull()
                             ->required(),
 
-                        Forms\Components\DateTimePicker::make('publish_date')
+                        Forms\Components\DatePicker::make('publish_date')
                             ->label('Publish Date')
                             ->default(now())
                             ->required()
@@ -49,7 +49,7 @@ class NewsResource extends Resource
 
                         SpatieMediaLibraryFileUpload::make('images')
                             ->label('News Images')
-                            ->collection('images')
+                            ->collection('news')
                             ->image()
                             ->imageEditor()
                             ->imageEditorAspectRatios([
@@ -128,7 +128,7 @@ class NewsResource extends Resource
             ->columns([
                 SpatieMediaLibraryImageColumn::make('images')
                     ->label('Images')
-                    ->collection('images')
+                    ->collection('news')
                     ->conversion('thumb')
                     ->size(60)
                     ->limit(3),

@@ -54,9 +54,14 @@ class NewsRepository
             ->orderBy('id', 'asc')->get();
         foreach ($old_data as $item) {
             $media = DB::table('media_copy1')->where('model_id', $item->id)->where('model_type', 'App\Models\News')->first();
+            
+            // Decode JSON strings to arrays before saving
+            $title = is_string($item->title) ? json_decode($item->title, true) : $item->title;
+            $description = is_string($item->description) ? json_decode($item->description, true) : $item->description;
+            
             $news = News::create([
-                'title' => $item->title,
-                'description' => $item->description,
+                'title' => $title,
+                'description' => $description,
                 'status' => $item->status,
                 'publish_date' => $item->date,
             ]);

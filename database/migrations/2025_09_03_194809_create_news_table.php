@@ -17,8 +17,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->json('description')->nullable();
             $table->boolean('status')->default(true);
-            $table->datetime('publish_date')->nullable();
-            $table->datetime('publish_dat222e')->nullable();
+            $table->date('publish_date')->nullable();
             $table->foreignId('gallery_id')->nullable()->constrained('galleries');
             $table->timestamps();
             $table->softDeletes();
